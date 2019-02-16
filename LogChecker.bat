@@ -2,13 +2,10 @@
 CLS
 SETLOCAL ENABLEDELAYEDEXPANSION
 
-REM [check there exists keywords in all the log text files in all sub-directories or not]
+REM [Description: check there exists keywords in all the log text files in all sub-directories or not]
+REM [Note       : need KEYWORD.txt in the same path]
 
 SET checker="RD_UNC"
-
-SET list="SCT_R_TMO_INT: 0x0000"
-SET list=%list%;"RD_UNC: 0x0000"
-SET list=%list%;"RCV_UNEXP_CMD: 0x0000"
 
 SET totalErrorCnt=0
 SET totalFileCnt=0
@@ -36,8 +33,8 @@ FOR /f "tokens=*" %%G IN ('DIR /s/b/o:gn *log.txt') DO (
     REM method 1: command result into variable
     REM for /f "delims=" %%a in ('FINDSTR /R /N "^.*" !filePath! ^| FIND /C !checker!') do set expectedCnt=%%a
     REM method 2: command result into file, then we read file into variable
-    FINDSTR /R /N "^.*" !filePath! | FIND /C !checker! > output.txt
-    FOR /f "delims=" %%x IN (output.txt) DO (
+    FINDSTR /R /N "^.*" !filePath! | FIND /C !checker! > TEMP.txt
+    FOR /f "delims=" %%x IN (TEMP.txt) DO (
         SET expectedCnt=%%x
     )
     REM ECHO !expectedCnt!
@@ -45,7 +42,7 @@ FOR /f "tokens=*" %%G IN ('DIR /s/b/o:gn *log.txt') DO (
     SET n=0
     SET tempErrorCnt=0
 
-    FOR %%a IN (%list%) DO (
+    FOR /f "tokens=*" %%a in (KEYWORD.txt) do (
         SET errorInt=%%a
         REM ECHO [!n!] !errorInt!
         
@@ -53,8 +50,8 @@ FOR /f "tokens=*" %%G IN ('DIR /s/b/o:gn *log.txt') DO (
         REM method 1: command result into variable
         REM for /f "delims=" %%a in ('FINDSTR /R /N "^.*" !filePath! ^| FIND /C !errorInt!') do set cnt=%%a
         REM method 2. command result into file, then we read file into variable
-        FINDSTR /R /N "^.*" !filePath! | FIND /C !errorInt! > output.txt
-        FOR /f "delims=" %%x IN (output.txt) DO (
+        FINDSTR /R /N "^.*" !filePath! | FIND /C "!errorInt!" > TEMP.txt
+        FOR /f "delims=" %%x IN (TEMP.txt) DO (
             SET cnt=%%x
             REM ECHO CNT: !cnt!
             
@@ -74,8 +71,10 @@ FOR /f "tokens=*" %%G IN ('DIR /s/b/o:gn *log.txt') DO (
     )
 )
 
-REM step 7. delete all backup files of SED
+REM step 7. delete temp file and all backup files of SED
 DEL sed* 
+DEL TEMP.txt
+
 
 ECHO.
 ECHO.
